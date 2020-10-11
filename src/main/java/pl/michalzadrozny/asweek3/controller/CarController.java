@@ -1,6 +1,5 @@
 package pl.michalzadrozny.asweek3.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
@@ -20,7 +19,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequestMapping(value = "/cars", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
 public class CarController {
 
-    CarServiceImpl carService;
+    private CarServiceImpl carService;
 
     @Autowired
     public CarController(CarServiceImpl carService) {
@@ -55,7 +54,6 @@ public class CarController {
         } else {
             return ResponseEntity.notFound().build();
         }
-
     }
 
     @GetMapping("/color/{color}")
@@ -72,7 +70,6 @@ public class CarController {
 
             return ResponseEntity.ok(collectionModel);
         }
-
     }
 
     @PostMapping
@@ -80,17 +77,17 @@ public class CarController {
         Optional<Car> foundCar = carService.findCarById(newCar.getId());
 
         if (foundCar.isPresent()) {
-            return  ResponseEntity.status(HttpStatus.CONFLICT).body(foundCar.get());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(foundCar.get());
         } else {
             carService.getListOfCars().add(newCar);
             addLink(newCar);
-            return  ResponseEntity.status(HttpStatus.CREATED).body(newCar);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newCar);
         }
     }
 
     @PutMapping
     public ResponseEntity<Car> modCar(@RequestBody Car newCar) {
-        Optional<Car> foundCar = carService.findEqualCar(newCar);
+        Optional<Car> foundCar = carService.findCarByCarId(newCar);
 
         if (foundCar.isPresent()) {
             foundCar.get().setColor(newCar.getColor());
