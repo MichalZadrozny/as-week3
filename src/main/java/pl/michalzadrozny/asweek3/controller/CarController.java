@@ -2,54 +2,50 @@ package pl.michalzadrozny.asweek3.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.michalzadrozny.asweek3.model.Car;
 import pl.michalzadrozny.asweek3.service.CarServiceImpl;
+import pl.michalzadrozny.asweek3.service.HypermediaControlService;
 
 import java.util.List;
 import java.util.Optional;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @RestController
 @RequestMapping(value = "/cars", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
 public class CarController {
 
-    private CarServiceImpl carService;
+    private final CarServiceImpl carService;
+    private final HypermediaControlService hypermediaService;
+
 
     @Autowired
-    public CarController(CarServiceImpl carService) {
+    public CarController(CarServiceImpl carService, HypermediaControlService hypermediaService) {
         this.carService = carService;
+        this.hypermediaService = hypermediaService;
     }
 
     @GetMapping
     public ResponseEntity<CollectionModel<Car>> getCars() {
-        if (carService.getListOfCars().isEmpty()) {
+        List<Car> carList = carService.getListOfCars();
+
+        if (carList.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
-            List<Car> carList = carService.getListOfCars();
-
-            carList.forEach(this::addLink);
-
-            Link link = linkTo(CarController.class).withSelfRel();
-            CollectionModel<Car> collectionModel = new CollectionModel<>(carList, link);
-
+            CollectionModel<Car> collectionModel = hypermediaService.addMultipleLinks(carList);
             return ResponseEntity.ok(collectionModel);
         }
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Car> getCarByID(@PathVariable long id) {
         Optional<Car> foundCar = carService.findCarById(id);
 
         if (foundCar.isPresent()) {
-            if (!foundCar.get().hasLinks()) {
-                addLink(foundCar.get());
-            }
+            hypermediaService.addLink(foundCar.get());
             return ResponseEntity.ok(foundCar.get());
         } else {
             return ResponseEntity.notFound().build();
@@ -63,14 +59,10 @@ public class CarController {
         if (foundCars.isEmpty()) {
             return ResponseEntity.notFound().build();
         } else {
-            foundCars.forEach(this::addLink);
-
-            Link link = linkTo(CarController.class).slash("color").slash(color).withSelfRel();
-            CollectionModel<Car> collectionModel = new CollectionModel<>(foundCars, link);
-
-            return ResponseEntity.ok(collectionModel);
+            return ResponseEntity.ok(hypermediaService.addMultipleLinksForColors(color, foundCars));
         }
     }
+
 
     @PostMapping
     public ResponseEntity<Car> addCar(@RequestBody Car newCar) {
@@ -80,23 +72,19 @@ public class CarController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(foundCar.get());
         } else {
             carService.getListOfCars().add(newCar);
-            addLink(newCar);
+            hypermediaService.addLink(newCar);
             return ResponseEntity.status(HttpStatus.CREATED).body(newCar);
         }
     }
 
     @PutMapping
     public ResponseEntity<Car> modCar(@RequestBody Car newCar) {
-        Optional<Car> foundCar = carService.findCarByCarId(newCar);
+        Optional<Car> foundCar = carService.findCarById(newCar.getId());
 
         if (foundCar.isPresent()) {
-            foundCar.get().setColor(newCar.getColor());
-            foundCar.get().setMark(newCar.getMark());
-            foundCar.get().setModel(newCar.getModel());
-            addLink(foundCar.get());
-
+            foundCar.get().modCar(newCar);
+            hypermediaService.addLink(foundCar.get());
             return ResponseEntity.ok(foundCar.get());
-
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -108,7 +96,7 @@ public class CarController {
 
         if (foundCar.isPresent()) {
             foundCar.get().setColor(color);
-            addLink(foundCar.get());
+            hypermediaService.addLink(foundCar.get());
             return new ResponseEntity<>(foundCar.get(), HttpStatus.OK);
         } else {
             return ResponseEntity.notFound().build();
@@ -127,7 +115,5 @@ public class CarController {
         }
     }
 
-    private void addLink(Car car) {
-        car.addIf(!car.hasLinks(), () -> linkTo(CarController.class).slash(car.getId()).withSelfRel());
-    }
+
 }

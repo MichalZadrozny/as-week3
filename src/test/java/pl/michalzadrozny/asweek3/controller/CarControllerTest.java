@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import pl.michalzadrozny.asweek3.model.Car;
 import pl.michalzadrozny.asweek3.service.CarServiceImpl;
+import pl.michalzadrozny.asweek3.service.HypermediaControlService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,19 +39,18 @@ class CarControllerTest {
     @MockBean
     private CarServiceImpl carService;
 
+    @MockBean
+    private HypermediaControlService hypermediaService;
+
     @Autowired
     private JacksonTester<Car> jacksonTester;
 
     private List<Car> prepareMockData() {
         List<Car> carList = new ArrayList<>();
 
-        Car maluch = new Car(0, "Fiat", "126p", "Silver");
-        Car mustang = new Car(1, "Ford", "Mustang", "Red");
-        Car cytrynka = new Car(2, "Citroen", "Saxo", "Silver");
-
-        carList.add(maluch);
-        carList.add(mustang);
-        carList.add(cytrynka);
+        carList.add(new Car(0, "Fiat", "126p", "Silver"));
+        carList.add(new Car(1, "Ford", "Mustang", "Red"));
+        carList.add(new Car(2, "Citroen", "Saxo", "Silver"));
 
         return carList;
     }
@@ -73,7 +73,9 @@ class CarControllerTest {
     void should_returnCollectionOfCars_when_listOfCarsIsNotEmpty() throws Exception {
 
 //        given
-        given(carService.getListOfCars()).willReturn(prepareMockData());
+        List<Car> cars = prepareMockData();
+        given(carService.getListOfCars()).willReturn(cars);
+        given(hypermediaService.addMultipleLinks(cars)).willCallRealMethod();
 
 //        when
         ResultActions resultActions = mockMvc.perform(MockMvcRequestBuilders.get("/cars"));
@@ -132,7 +134,9 @@ class CarControllerTest {
     void should_returnCollectionOfCarsByColor() throws Exception {
 
 //        given
-        given(carService.findCarsByColor("Silver")).willReturn(prepareMockData());
+        List<Car> cars = prepareMockData();
+        given(carService.findCarsByColor("Silver")).willReturn(cars);
+        given(hypermediaService.addMultipleLinksForColors("Silver", cars)).willCallRealMethod();
 
 //        when
         ResultActions resultActions = mockMvc.perform(MockMvcRequestBuilders.get("/cars/color/{color}", "Silver"));
@@ -179,7 +183,7 @@ class CarControllerTest {
 
 //        given
         Car car = new Car(0, "Fiat", "126p", "Silver");
-        given(carService.findCarByCarId(car)).willReturn(Optional.empty());
+        given(carService.findCarById(car.getId())).willReturn(Optional.empty());
 
 //        when
         MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders.put("/cars").contentType(MediaType.APPLICATION_JSON).content(jacksonTester.write(car).getJson())).andReturn().getResponse();
@@ -195,7 +199,7 @@ class CarControllerTest {
 //        given
         Car car = new Car(0, "Fiat", "126p", "Silver");
         Car car2 = new Car(0, "Fiat2", "126p2", "Silver2");
-        given(carService.findCarByCarId(car2)).willReturn(Optional.of(car));
+        given(carService.findCarById(car2.getId())).willReturn(Optional.of(car));
 
 //        when
         ResultActions resultActions = mockMvc.perform(MockMvcRequestBuilders.put("/cars").contentType(MediaType.APPLICATION_JSON).content(jacksonTester.write(car2).getJson()));

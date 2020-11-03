@@ -10,6 +10,4 @@ public interface CarService {
     List<Car> findCarsByColor(String color);
 
     Optional<Car> findCarById(long id);
-
-    Optional<Car> findCarByCarId(Car car);
 }

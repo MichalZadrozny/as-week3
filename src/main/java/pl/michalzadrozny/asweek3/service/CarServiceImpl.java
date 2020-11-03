@@ -13,18 +13,14 @@ import java.util.stream.Collectors;
 @Getter
 public class CarServiceImpl implements CarService {
 
-    private List<Car> listOfCars;
+    private final List<Car> listOfCars;
 
     public CarServiceImpl() {
         listOfCars = new ArrayList<>();
 
-        Car maluch = new Car(0, "Fiat", "126p", "Silver");
-        Car mustang = new Car(1, "Ford", "Mustang", "Red");
-        Car cytrynka = new Car(2, "Citroen", "Saxo", "Silver");
-
-        listOfCars.add(maluch);
-        listOfCars.add(mustang);
-        listOfCars.add(cytrynka);
+        listOfCars.add(new Car(0, "Fiat", "126p", "Silver"));
+        listOfCars.add(new Car(1, "Ford", "Mustang", "Red"));
+        listOfCars.add(new Car(2, "Citroen", "Saxo", "Silver"));
     }
 
     @Override
@@ -35,10 +31,5 @@ public class CarServiceImpl implements CarService {
     @Override
     public Optional<Car> findCarById(long id) {
         return listOfCars.stream().filter(car -> car.getId() == id).findFirst();
-    }
-
-    @Override
-    public Optional<Car> findCarByCarId(Car newCar) {
-        return listOfCars.stream().filter(car -> car.getId() == newCar.getId()).findFirst();
     }
 }

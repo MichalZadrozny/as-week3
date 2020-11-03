@@ -1,10 +1,11 @@
 package pl.michalzadrozny.asweek3.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.springframework.hateoas.RepresentationModel;
 
 @Data
+@AllArgsConstructor
 public class Car extends RepresentationModel<Car> {
 
     private long id;
@@ -12,13 +13,11 @@ public class Car extends RepresentationModel<Car> {
     private String model;
     private String color;
 
-    public Car() {
+    public void modCar(Car car) {
+        this.mark = car.mark;
+        this.model = car.model;
+        this.color = car.color;
     }
 
-    public Car(int id, String mark, String model, String color) {
-        this.id = id;
-        this.mark = mark;
-        this.model = model;
-        this.color = color;
-    }
+
 }
